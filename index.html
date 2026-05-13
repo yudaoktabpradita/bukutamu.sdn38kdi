@@ -3,109 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buku Tamu Digital</title>
+    <title>Buku Tamu Digital - SDN 38 Kendari</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .camera-container { position: relative; overflow: hidden; border-radius: 1rem; }
-        #video { transform: scaleX(-1); width: 100%; border-radius: 1rem; background: #000; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .camera-container { position: relative; overflow: hidden; border-radius: 1rem; border: 2px solid #e2e8f0; background: #000; }
+        #video { transform: scaleX(-1); width: 100%; border-radius: 0.8rem; display: block; }
+        #video.mirror-off { transform: scaleX(1); } /* Nonaktifkan mirror jika kamera belakang */
         #canvas { display: none; }
+        .live-indicator {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 8px;
+            border-radius: 20px;
+            z-index: 10;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
         .loading-overlay {
-            display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 50;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            display: none; /* Tersembunyi secara default */
             justify-content: center;
             align-items: center;
+            z-index: 9999; /* Pastikan di atas segalanya */
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="py-4 px-2 md:py-8 md:px-4">
 
     <div id="loader" class="loading-overlay">
         <div class="flex flex-col items-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p class="text-blue-600 font-medium">Mengirim data...</p>
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+            <p class="text-blue-700 font-bold text-lg">Mengirim Data Tamu...</p>
         </div>
     </div>
 
-    <div id="notification" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden transition-all duration-300">
-        <div id="notif-content" class="px-6 py-3 rounded-full shadow-lg text-white font-medium"></div>
+    <div id="notification" class="fixed top-4 left-1/2 -translate-x-1/2 z-[110] hidden transition-all duration-300 w-11/12 max-w-md">
+        <div id="notif-content" class="px-6 py-4 rounded-2xl shadow-2xl text-white font-semibold text-center"></div>
     </div>
 
-    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-        <!-- Header -->
-        <div class="bg-blue-600 p-6 text-white text-center">
-            <h1 class="text-2xl font-bold">Buku Tamu Pengunjung</h1>
-            <p class="text-blue-100 text-sm mt-1">Silakan isi formulir di bawah ini dengan benar</p>
+    <div class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        
+        <!-- School Banner Image -->
+        <div class="relative">
+            <img src="https://media.istockphoto.com/id/1336441285/id/vektor/ruang-kelas-sekolah-kosong-dengan-gaya-kartun.jpg?s=612x612&w=0&k=20&c=2O-YrcWJWTXHZio8IW2VKxf-Ohq24IYh4RQXPoNZvtA=" alt="Banner SDN 38 Kendari" class="banner-img">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-900/80 to-transparent p-4">
+                <h1 class="text-white text-xl font-bold">SDN 38 Kendari</h1>
+                <p class="text-blue-100 text-xs">Jl. Bunga Kolosua, Kemaraya, Kota Kendari</p>
+            </div>
         </div>
 
-        <form id="guestForm" class="p-6 space-y-6">
+        <form id="guestForm" class="p-6 space-y-5">
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap Tamu</label>
-                    <input type="text" name="namaTamu" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Contoh: Budi Santoso">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Lengkap Tamu</label>
+                    <input type="text" name="namaTamu" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition" placeholder="Masukkan nama Anda">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">WhatsApp (HP)</label>
+                        <input type="tel" name="nomorTelepon" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition" placeholder="08...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Asal Pengunjung</label>
+                        <select id="asalPengunjung" name="asalPengunjung" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition cursor-pointer">
+                            <option value="">-- Pilih --</option>
+                            <option value="Orang Tua Murid">Orang Tua Murid</option>
+                            <option value="Lembaga/Instansi">Lembaga/Instansi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Conditional Fields -->
+                <div id="conditionalField" class="hidden animate-fade-in">
+                    <label id="conditionalLabel" class="block text-sm font-bold text-gray-700 mb-1"></label>
+                    <input type="text" id="conditionalInput" name="detailAsal" class="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nomor Telepon (WhatsApp)</label>
-                    <input type="tel" name="nomorTelepon" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="0812xxxxxx">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Asal Pengunjung</label>
-                    <select id="asalPengunjung" name="asalPengunjung" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-                        <option value="">-- Pilih Asal --</option>
-                        <option value="Orang Tua Murid">Orang Tua Murid</option>
-                        <option value="Lembaga/Instansi">Lembaga/Instansi</option>
-                    </select>
-                </div>
-
-                <div id="conditionalField" class="hidden">
-                    <label id="conditionalLabel" class="block text-sm font-semibold text-gray-700 mb-1"></label>
-                    <input type="text" id="conditionalInput" name="detailAsal" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tujuan Kunjungan</label>
-                    <textarea name="tujuanKunjungan" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Sebutkan alasan kunjungan Anda"></textarea>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tujuan Kunjungan</label>
+                    <textarea name="tujuanKunjungan" required rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition" placeholder="Apa keperluan Anda?"></textarea>
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label class="block text-sm font-semibold text-gray-700">Foto Selfie</label>
+            <div class="space-y-3 bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-300">
+                <label class="block text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.172-1.172A2 2 0 0010.122 3H9.878a2 2 0 00-1.414.586L7.293 4.707A1 1 0 016.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                    </svg>
+                    Ambil Foto Selfie (Wajib)
+                </label>
+                
                 <div class="camera-container">
+                    <div class="live-indicator">
+                        <div class="dot"></div>
+                        <span class="text-[10px] font-bold text-white tracking-widest">LIVE</span>
+                    </div>
                     <video id="video" autoplay playsinline></video>
                     <div id="photoPreview" class="hidden absolute inset-0 bg-black rounded-xl">
-                        <img id="capturedImage" class="w-full h-full object-cover rounded-xl" style="transform: scaleX(-1);">
+                        <img id="capturedImage" class="w-full h-full object-cover rounded-xl">
                     </div>
                 </div>
                 
-                <div class="flex gap-2">
-                    <button type="button" id="btnCapture" class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-medium hover:bg-gray-700 transition flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.172-1.172A2 2 0 0010.122 3H9.878a2 2 0 00-1.414.586L7.293 4.707A1 1 0 016.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                        </svg>
-                        Ambil Foto
-                    </button>
-                    <button type="button" id="btnRetake" class="hidden flex-1 bg-red-100 text-red-600 py-2 rounded-lg font-medium hover:bg-red-200 transition">
+                <div class="flex flex-col gap-3">
+                    <div class="flex gap-2">
+                        <button type="button" id="btnSwitch" class="bg-gray-800 text-white p-3 rounded-xl hover:bg-gray-700 transition flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                        <button type="button" id="btnCapture" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition flex items-center justify-center gap-2">
+                            Ambil Foto
+                        </button>
+                    </div>
+                    <button type="button" id="btnRetake" class="hidden w-full bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 shadow-lg transition">
                         Foto Ulang
                     </button>
                 </div>
                 <input type="hidden" name="fotoData" id="fotoData" required>
             </div>
 
-            <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
-                <input type="checkbox" id="pernyataan" name="pernyataan" required class="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded">
-                <label for="pernyataan" class="text-sm text-gray-600">
-                    Saya menyatakan bahwa data yang saya berikan adalah benar dan saya bersedia mematuhi peraturan di lingkungan ini.
+            <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-xl border border-yellow-100">
+                <input type="checkbox" id="pernyataan" name="pernyataan" required class="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded cursor-pointer">
+                <label for="pernyataan" class="text-xs text-yellow-800 leading-tight">
+                    Saya menyatakan data ini benar dan bersedia mengikuti tata tertib di lingkungan <b>SDN 38 Kendari</b>.
                 </label>
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform active:scale-[0.98]">
-                Simpan & Selesai
+            <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-xl hover:bg-green-700 shadow-xl shadow-green-100 transition-all transform active:scale-[0.97]">
+                SIMPAN DATA TAMU
             </button>
         </form>
     </div>
@@ -117,55 +167,108 @@
         const canvas = document.getElementById('canvas');
         const btnCapture = document.getElementById('btnCapture');
         const btnRetake = document.getElementById('btnRetake');
+        const btnSwitch = document.getElementById('btnSwitch');
         const photoPreview = document.getElementById('photoPreview');
         const capturedImage = document.getElementById('capturedImage');
         const fotoDataInput = document.getElementById('fotoData');
 
-        // Ganti URL ini dengan URL Web App dari Google Apps Script Anda nanti
+        let currentStream = null;
+        let facingMode = "user"; // "user" untuk depan, "environment" untuk belakang
+
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBTGTfyhwRAFlclKu6ZfnKwd68Bfls9GyLyIHj56ht29FZOmg_rnO9SwHPpSIfkJV6SQ/exec";
 
-        // Inisialisasi Kamera
         async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user" }, 
+                const constraints = {
+                    video: { 
+                        facingMode: facingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
                     audio: false 
-                });
-                video.srcObject = stream;
+                };
+
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = currentStream;
+                
+                // Efek cermin hanya untuk kamera depan
+                if (facingMode === "user") {
+                    video.classList.remove('mirror-off');
+                    capturedImage.style.transform = "scaleX(-1)";
+                } else {
+                    video.classList.add('mirror-off');
+                    capturedImage.style.transform = "scaleX(1)";
+                }
             } catch (err) {
-                showNotification("Gagal mengakses kamera. Pastikan izin kamera diberikan.", "bg-red-500");
+                console.error(err);
+                showNotification("Gagal akses kamera. Periksa izin browser.", "bg-red-600");
             }
         }
+
+        btnSwitch.addEventListener('click', () => {
+            facingMode = facingMode === "user" ? "environment" : "user";
+            startCamera();
+        });
 
         btnCapture.addEventListener('click', () => {
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            
+            // Handle mirror effect on canvas if using front camera
+            if (facingMode === "user") {
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+            }
+            
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Kompresi Gambar (Quality 0.7 = ~70%)
-            // Canvas to JPEG ensures smaller size compared to PNG
-            let quality = 0.7;
-            let dataUrl = canvas.toDataURL('image/jpeg', quality);
+            // Reset transformation for watermark
+            context.setTransform(1, 0, 0, 1, 0, 0);
             
-            // Cek ukuran, jika masih > 1000KB, kurangi kualitas
-            while (dataUrl.length > 1000 * 1024 && quality > 0.1) {
-                quality -= 0.1;
-                dataUrl = canvas.toDataURL('image/jpeg', quality);
-            }
+            // Watermark Logic
+            const now = new Date();
+            const timeString = now.toLocaleString('id-ID', { 
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            const watermarkText = `SDN 38 KENDARI | ${timeString}`;
+            
+            const fontSize = Math.floor(canvas.width / 25);
+            context.font = `bold ${fontSize}px Inter, sans-serif`;
+            
+            const metrics = context.measureText(watermarkText);
+            const textWidth = metrics.width;
+            const x = canvas.width - textWidth - 20;
+            const y = canvas.height - 20;
 
+            context.fillStyle = "rgba(0, 0, 0, 0.5)";
+            context.fillRect(x - 10, y - fontSize, textWidth + 20, fontSize + 10);
+
+            context.fillStyle = "white";
+            context.fillText(watermarkText, x, y);
+            
+            let dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            
             capturedImage.src = dataUrl;
             fotoDataInput.value = dataUrl;
             
             photoPreview.classList.remove('hidden');
             btnRetake.classList.remove('hidden');
-            btnCapture.classList.add('hidden');
+            btnCapture.parentElement.classList.add('hidden');
+            btnSwitch.classList.add('hidden');
         });
 
         btnRetake.addEventListener('click', () => {
             photoPreview.classList.add('hidden');
             btnRetake.classList.add('hidden');
-            btnCapture.classList.remove('hidden');
+            btnCapture.parentElement.classList.remove('hidden');
+            btnSwitch.classList.remove('hidden');
             fotoDataInput.value = "";
         });
 
@@ -175,16 +278,16 @@
         const condInput = document.getElementById('conditionalInput');
 
         asalSelect.addEventListener('change', (e) => {
-            const value = e.target.value;
-            if (value === "Orang Tua Murid") {
+            const val = e.target.value;
+            if (val === "Orang Tua Murid") {
                 condField.classList.remove('hidden');
                 condLabel.innerText = "Nama Murid";
-                condInput.placeholder = "Masukkan nama lengkap murid";
+                condInput.placeholder = "Siapa nama anak Anda?";
                 condInput.required = true;
-            } else if (value === "Lembaga/Instansi") {
+            } else if (val === "Lembaga/Instansi") {
                 condField.classList.remove('hidden');
-                condLabel.innerText = "Nama Instansi/Lembaga";
-                condInput.placeholder = "Masukkan nama instansi Anda";
+                condLabel.innerText = "Nama Instansi";
+                condInput.placeholder = "Dari instansi mana Anda?";
                 condInput.required = true;
             } else {
                 condField.classList.add('hidden');
@@ -199,7 +302,7 @@
             e.preventDefault();
             
             if (!fotoDataInput.value) {
-                showNotification("Harap ambil foto selfie terlebih dahulu!", "bg-orange-500");
+                showNotification("Wajib ambil foto selfie!", "bg-orange-500");
                 return;
             }
 
@@ -207,30 +310,23 @@
 
             const formData = new FormData(form);
             const data = {};
-            formData.forEach((value, key) => data[key] = value);
-            
-            // Tambahkan Timestamp
-            data.timestamp = new Date().toLocaleString('id-ID');
+            formData.forEach((v, k) => data[k] = v);
+            data.timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar' });
 
             try {
-                // Catatan: Ini akan error jika SCRIPT_URL belum diisi.
-                // Anda harus mengdeploy kode Google Apps Script di bawah terlebih dahulu.
-                const response = await fetch(SCRIPT_URL, {
+                await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Penting untuk Apps Script
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'no-cors',
                     body: JSON.stringify(data)
                 });
 
-                showNotification("Berhasil! Data Anda telah tersimpan.", "bg-green-500");
+                showNotification("Terima kasih! Data Anda berhasil disimpan.", "bg-green-600");
                 form.reset();
-                btnRetake.click(); // Reset foto
+                btnRetake.click();
                 condField.classList.add('hidden');
                 
             } catch (error) {
-                console.error(error);
-                showNotification("Terjadi kesalahan saat mengirim data.", "bg-red-500");
+                showNotification("Gagal mengirim. Hubungi Admin.", "bg-red-600");
             } finally {
                 loader.style.display = 'none';
             }
@@ -240,12 +336,11 @@
             const notif = document.getElementById('notification');
             const content = document.getElementById('notif-content');
             content.innerText = msg;
-            content.className = `px-6 py-3 rounded-full shadow-lg text-white font-medium ${colorClass}`;
+            content.className = `px-6 py-4 rounded-2xl shadow-2xl text-white font-semibold text-center ${colorClass}`;
             notif.classList.remove('hidden');
             setTimeout(() => notif.classList.add('hidden'), 5000);
         }
 
-        // Start camera on load
         window.onload = startCamera;
     </script>
 </body>
